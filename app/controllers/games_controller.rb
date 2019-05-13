@@ -1,42 +1,26 @@
+require "open-uri"
+
 class GamesController < ApplicationController
+  VOWELS = %w(A E I O U Y)
+
   def new
-    @letters = (Array.new(9) { ('A'..'Z').to_a.sample }).join(" ")
+    @letters = Array.new(5) { VOWELS.sample }
+    @letters += Array.new(5) { (('A'..'Z').to_a - VOWELS).sample }
+    @letters.shuffle!
   end
 
   def score
-    raise
+    @letters = params[:letters].split
+    @word = (params[:word] || "").upcase
+    @included = included?(@word, @letters)
+    @english_word = english_word?(@word)
   end
 end
+
+private
 
 def included?(guess, grid)
   guess.chars.all? { |letter| guess.count(letter) <= grid.count(letter) }
-end
-
-def compute_score(attempt, time_taken)
-  time_taken > 60.0 ? 0 : attempt.size * (1.0 - time_taken / 60.0)
-end
-
-def run_game(attempt, grid, start_time, end_time)
-  result = { time: end_time - start_time }
-
-  score_and_message = score_and_message(attempt, grid, result[:time])
-  result[:score] = score_and_message.first
-  result[:message] = score_and_message.last
-
-  result
-end
-
-def score_and_message(attempt, grid, time)
-  if included?(attempt.upcase, grid)
-    if english_word?(attempt)
-      score = compute_score(attempt, time)
-      [score, "well done"]
-    else
-      [0, "not an english word"]
-    end
-  else
-    [0, "not in the grid"]
-  end
 end
 
 def english_word?(word)
